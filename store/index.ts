@@ -1,38 +1,25 @@
-// store/index.ts
-import { combineReducers, configureStore } from '@reduxjs/toolkit';
-import { persistStore, persistReducer } from 'redux-persist';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// store/index.ts (or index.js, but .ts is preferred for TypeScript)
 
-import taskReducer from './slices/taskSlice';
-import projectReducer from './slices/projectSlice';
-import authReducer from './slices/authSlice'; // Import your new authReducer
-
-const persistConfig = {
-  key: 'root',
-  storage: AsyncStorage,
-  // Add 'auth' to the whitelist to persist authentication state
-  whitelist: ['tasks', 'projects', 'auth'], // Whitelist the reducers you want to persist
-};
-
-const rootReducer = combineReducers({
-  tasks: taskReducer,
-  projects: projectReducer,
-  auth: authReducer, // Add the authReducer here
-});
-
-const persistedReducer = persistReducer(persistConfig, rootReducer);
+import { configureStore } from '@reduxjs/toolkit';
+import authReducer from './slices/authSlice';
+import projectsReducer from './slices/projectSlice';
+import tasksReducer from './slices/taskSlice'; // Import your tasks slice
+// Add other reducers as you create them
 
 export const store = configureStore({
-  reducer: persistedReducer,
+  reducer: {
+    auth: authReducer,
+    projects: projectsReducer,
+    tasks: tasksReducer, // Add your tasks slice here
+    // ... other slices
+  },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'], // Ignore these actions for serializable check
-      },
+      serializableCheck: false, // Disable for Firebase Timestamps if you store them directly in Redux
     }),
 });
 
-export const persistor = persistStore(store);
-
+// Infer the `RootState` and `AppDispatch` types from the store itself
 export type RootState = ReturnType<typeof store.getState>;
+// Inferred type: {auth: AuthState, projects: ProjectsState, ...}
 export type AppDispatch = typeof store.dispatch;

@@ -8,16 +8,11 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { ThemedText } from '../components/ThemedText';
 import { ThemedView } from '../components/ThemedView';
-import {
-  fetchProjects,
-  addProjectAsync,
-  updateProjectAsync,
-  deleteProjectAsync,
-  Project, // Make sure you import the Project interface
-} from './../store/slices/projectSlice';
+import { Project,updateProject,deleteProject,clearProjects,createProject } from '../store/slices/projectSlice'
 
 // Icons
 import { X } from 'lucide-react-native';
+import { Timestamp } from 'firebase/firestore';
 
 export default function ProjectModalScreen() {
   const router = useRouter();
@@ -28,7 +23,7 @@ export default function ProjectModalScreen() {
   const existingProject = useSelector((state: RootState) =>
     projectId ? state.projects.projects.find((p) => p.id === projectId) : undefined
   );
-  const userId = useSelector((state: RootState) => state.auth.user?.uid);
+  const userId = useSelector((state: RootState) => state.auth.uid);
   const [name, setName] = useState(existingProject?.name || '');
   const [description, setDescription] = useState(existingProject?.description || '');
 
@@ -40,6 +35,7 @@ export default function ProjectModalScreen() {
   }, [existingProject]);
 
   const handleSaveProject = useCallback(async () => {
+
     if (!name.trim()) {
       Alert.alert('Error', 'Project name cannot be empty.');
       return;
@@ -55,18 +51,18 @@ export default function ProjectModalScreen() {
         ...existingProject,
         name: name.trim(),
         description: description.trim() || undefined, // Allow description to be optional
-        updatedAt: new Date().toISOString(),
       };
-      await dispatch(updateProjectAsync(updatedProject));
+      await dispatch(updateProject({
+        projectId: existingProject.id,
+        updates: updatedProject,
+      }));
     } else {
-      // Add new project
-      // The `project` property of the payload for `addProjectAsync` should match
-      // the Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'userId'> type.
-      const newProjectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt' | 'userId'> = {
+      const newProjectData: {name: string; description?: string; ownerId: string} = {
         name: name.trim(),
         description: description.trim() || undefined,
+        ownerId: userId, // Use ownerId for consistency with other parts of the app
       };
-      await dispatch(addProjectAsync({ project: newProjectData, userId })); // Corrected key from 'projectData' to 'project'
+      await dispatch(createProject( newProjectData)); // Corrected key from 'projectData' to 'project'
     }
 
     router.back(); // Go back after saving

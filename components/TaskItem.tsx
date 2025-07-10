@@ -3,7 +3,6 @@ import React, { useMemo } from 'react'; // Import useMemo
 import { TouchableOpacity } from 'react-native';
 import { CheckCircle, Circle, Pencil, Trash2, FolderDot } from 'lucide-react-native'; // Add FolderDot icon
 
-import { Button } from './Button';
 import { Checkbox } from './Checkbox';
 import { ThemedText } from './ThemedText';
 import { ThemedView } from './ThemedView';
@@ -32,9 +31,9 @@ function TaskItem({ task, onToggleComplete, onEdit, onDelete }: TaskItemProps) {
 
   // Determine color for priority indicator
   const priorityColor =
-    task.priority === 'High'
+    task.priority === 'high'
       ? 'border-destructive' // Red
-      : task.priority === 'Medium'
+      : task.priority === 'medium'
       ? 'border-yellow-500' // Yellow
       : 'border-primary'; // Blue/default
 
@@ -72,7 +71,7 @@ function TaskItem({ task, onToggleComplete, onEdit, onDelete }: TaskItemProps) {
           )}
           {task.dueDate && (
             <ThemedText className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              Due: {task.dueDate}
+              Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
             </ThemedText>
           )}
           {/* NEW: Display Project Name */}
@@ -89,12 +88,12 @@ function TaskItem({ task, onToggleComplete, onEdit, onDelete }: TaskItemProps) {
 
       {/* Right section: Edit and Delete Buttons */}
       <ThemedView className="flex-row items-center">
-        <Button label="" variant="ghost" size="default" onPress={() => onEdit(task)}>
+        <TouchableOpacity onPress={() => onEdit(task)}>
           <Pencil size={20} className="text-muted-foreground" />
-        </Button>
-        <Button label="" variant="ghost" size="default" onPress={() => onDelete(task.id)}>
+        </TouchableOpacity>
+        <TouchableOpacity  onPress={() => onDelete(task.id)}>
           <Trash2 size={20} className="text-destructive" />
-        </Button>
+        </TouchableOpacity>
       </ThemedView>
     </ThemedView>
   );

@@ -18,24 +18,25 @@ import { updateProfile } from 'firebase/auth';
 // Redux imports
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../store';
-import { setAuthenticated, setAuthLoading, setAuthError } from '../../store/slices/authSlice';
+import { setUser } from '../../store/slices/authSlice'; // Import setUser action
 
 const EditProfileScreen = () => {
   const router = useRouter();
   const dispatch: AppDispatch = useDispatch();
-  const user = useSelector((state: RootState) => state.auth.user);
-  const authStatus = useSelector((state: RootState) => state.auth.status);
 
-  const [displayName, setDisplayName] = useState(auth.currentUser?.displayName || '');
-  const [isLoading, setIsLoading] = useState(false);
+  // Get user data and loading status from Redux state
+  const user = useSelector((state: RootState) => state.auth); // Get the whole auth state for convenience
+  const authLoading = useSelector((state: RootState) => state.auth.loading); // Use authLoading for Redux-managed loading
 
-  // Mettre à jour le displayName localement si l'utilisateur Firebase change
+  const [displayName, setDisplayName] = useState(user.displayName || '');
+  const [isLoading, setIsLoading] = useState(false); // Local loading for this component's specific action
+
+  // Update the local displayName state when the Redux user displayName changes
   useEffect(() => {
-    if (auth.currentUser) {
-      setDisplayName(auth.currentUser.displayName || '');
+    if (user.displayName) {
+      setDisplayName(user.displayName);
     }
-  }, [auth.currentUser?.displayName]);
-
+  }, [user.displayName]);
 
   const handleUpdateProfile = useCallback(async () => {
     if (!auth.currentUser) {
@@ -43,32 +44,38 @@ const EditProfileScreen = () => {
       return;
     }
 
-    setIsLoading(true);
-    dispatch(setAuthLoading()); // Mettre le statut Redux en chargement
+    setIsLoading(true); // Start local loading
 
     try {
       await updateProfile(auth.currentUser, {
         displayName: displayName,
-        // photoURL: "https://example.com/jane-q-user/profile.jpg" // Ajoutez si vous gérez les photos de profil
+        // photoURL: "https://example.com/jane-q-user/profile.jpg" // Add if you manage profile photos
       });
 
-      // Mettre à jour l'état Redux avec les nouvelles informations de l'utilisateur
-      dispatch(setAuthenticated({
+      // Update Redux state with the new user information after successful Firebase update
+      dispatch(setUser({
         uid: auth.currentUser.uid,
-        email: auth.currentUser.email || 'N/A',
+        email: auth.currentUser.email || null,
         displayName: auth.currentUser.displayName || null,
+        role: user.role, // Keep existing role from Redux state
+        projectRoles: user.projectRoles, // Keep existing projectRoles from Redux state
+        isAuthenticated: user.isAuthenticated,
+        loading: false, // Explicitly set loading to false here
+        error: null, // Clear any error
       }));
 
       Alert.alert('Succès', 'Votre profil a été mis à jour.');
-      router.back(); // Retourner à l'écran précédent (Profil ou Paramètres)
+      router.back(); // Go back to the previous screen (Profile or Settings)
     } catch (error: any) {
       console.error('Erreur de mise à jour du profil :', error.message);
-      dispatch(setAuthError(error.message || 'Échec de la mise à jour du profil.'));
       Alert.alert('Erreur', error.message || 'Échec de la mise à jour du profil.');
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // End local loading
     }
-  }, [displayName, dispatch, router]);
+  }, [displayName, dispatch, router, user.role, user.projectRoles, user.isAuthenticated]); // Add all dependencies
+
+  // Combine local isLoading with Redux authLoading for button disabled state
+  const buttonDisabled = isLoading || authLoading;
 
   return (
     <SafeAreaProvider className="flex-1 bg-background dark:bg-foreground">
@@ -87,9 +94,9 @@ const EditProfileScreen = () => {
                 className="mb-4 h-12 w-full items-center"
                 value={displayName}
                 onChangeText={setDisplayName}
-                editable={!isLoading}
+                editable={!buttonDisabled} // Use combined disabled state
               />
-              {/* Ajoutez d'autres champs pour d'autres attributs si nécessaire */}
+              {/* Add other fields for other attributes if necessary */}
 
               <Button
                 label={isLoading ? <ActivityIndicator color="#fff" /> : "Enregistrer les modifications"}
@@ -97,7 +104,7 @@ const EditProfileScreen = () => {
                 variant="secondary"
                 onPress={handleUpdateProfile}
                 className="mb-4 w-4/5 items-center justify-center font-poppinsSemiBold"
-                disabled={isLoading}
+                disabled={buttonDisabled} // Use combined disabled state
               />
 
               <Button
@@ -106,7 +113,7 @@ const EditProfileScreen = () => {
                 variant="ghost"
                 onPress={() => router.back()}
                 className="w-4/5 items-center justify-center font-poppinsSemiBold mt-2"
-                disabled={isLoading}
+                disabled={buttonDisabled} // Use combined disabled state
               />
             </ThemedView>
           </ThemedView>

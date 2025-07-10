@@ -4,7 +4,7 @@ import { FlatList, TouchableOpacity } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
-import { deleteTask, toggleTaskCompleted, Task } from '../store/slices/taskSlice';
+import { deleteTask, updateTask, Task } from '../store/slices/taskSlice';
 import { Project } from '../store/slices/projectSlice'; // Import Project interface
 
 // UI Components
@@ -25,35 +25,60 @@ export default function ProjectDetailsScreen() {
 
   // Select all projects and all tasks from the Redux store
   const projects = useSelector((state: RootState) => state.projects.projects);
-  const allTasks = useSelector((state: RootState) => state.tasks.tasks);
+  const allTasks = useSelector((state: RootState) => state.tasks.items);
 
   // Find the current project based on the projectId from params
   const currentProject: Project | undefined = useMemo(() => {
-    return projects.find(p => p.id === projectId);
+    return projects.find((p) => p.id === projectId);
   }, [projectId, projects]);
 
   // Filter tasks that belong to the current project
   const projectTasks: Task[] = useMemo(() => {
-    return allTasks.filter(task => task.projectId === projectId);
+    return allTasks.filter((task) => task.projectId === projectId);
   }, [projectId, allTasks]);
 
   // Handlers for tasks (re-using logic from index.tsx or task-modal.tsx)
   const handleToggleCompleted = useCallback(
-    (id: string) => {
-      dispatch(toggleTaskCompleted(id));
+    (taskToToggle: Task) => {
+      // Accept the full task object
+      if (!projectId) {
+        Alert.alert('Error', 'No project selected.');
+        return;
+      }
+
+      // Determine the new status based on the current status
+      const newStatus = taskToToggle.status === 'done' ? 'to-do' : 'done';
+      dispatch(
+        updateTask({
+          projectId: projectId,
+          taskId: taskToToggle.id,
+          updates: {
+            status: newStatus,
+            // updatedAt is handled by serverTimestamp in the thunk
+          },
+        })
+      );
     },
-    [dispatch]
+    [dispatch, projectId]
   );
 
   const handleDeleteTask = useCallback(
-    (id: string) => {
+     (taskToToggle: Task) => {
+      // Accept the full task object
+      if (!projectId) {
+        Alert.alert('Error', 'No project selected.');
+        return;
+      }
       Alert.alert('Delete Task', 'Are you sure you want to delete this task?', [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            dispatch(deleteTask(id));
+            dispatch(deleteTask({
+              taskId: taskToToggle.id,
+              projectId: projectId,
+            }));
           },
         },
       ]);
@@ -61,20 +86,23 @@ export default function ProjectDetailsScreen() {
     [dispatch]
   );
 
-  const handleEditTask = useCallback((task: Task) => {
-    router.push({
-      pathname: '/task-modal',
-      params: { taskId: task.id },
-    });
-  }, [router]);
+  const handleEditTask = useCallback(
+    (task: Task) => {
+      router.push({
+        pathname: '/task-modal',
+        params: { taskId: task.id },
+      });
+    },
+    [router]
+  );
 
   const renderTaskItem = useCallback(
     ({ item }: { item: Task }) => (
       <TaskItem
         task={item}
-        onToggleComplete={handleToggleCompleted}
+        onToggleComplete={() => handleToggleCompleted(item)}
         onEdit={handleEditTask}
-        onDelete={handleDeleteTask}
+        onDelete={() => handleDeleteTask(item)}
       />
     ),
     [handleToggleCompleted, handleEditTask, handleDeleteTask]
@@ -92,22 +120,24 @@ export default function ProjectDetailsScreen() {
   return (
     <ThemedView className="flex-1 bg-background p-4 pt-12 dark:bg-foreground">
       {/* Custom Header */}
-      <ThemedView className="flex-row items-center pb-4 border-b border-gray-200 dark:border-gray-700">
-        <TouchableOpacity onPress={() => router.back()} className="p-2 mr-2">
+      <ThemedView className="flex-row items-center border-b border-gray-200 pb-4 dark:border-gray-700">
+        <TouchableOpacity onPress={() => router.back()} className="mr-2 p-2">
           <ArrowLeft size={24} className="text-foreground dark:text-background" />
         </TouchableOpacity>
-        <ThemedText type="title" className="font-poppinsBold text-foreground dark:text-background flex-1">
+        <ThemedText
+          type="title"
+          className="flex-1 font-poppinsBold text-foreground dark:text-background">
           {currentProject.name}
         </ThemedText>
       </ThemedView>
 
       {currentProject.description && (
-        <ThemedText className="text-base text-muted-foreground mt-4 mb-4">
+        <ThemedText className="mb-4 mt-4 text-base text-muted-foreground">
           {currentProject.description}
         </ThemedText>
       )}
 
-      <ThemedText type="subtitle" className="text-foreground mt-4 mb-2">
+      <ThemedText type="subtitle" className="mb-2 mt-4 text-foreground">
         Tasks for this Project ({projectTasks.length})
       </ThemedText>
 

@@ -1,75 +1,92 @@
-// app/auth/login.tsx
-import React, { useState, useCallback } from 'react';
-import { Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useState, useEffect } from 'react'; // Import useEffect
+import { ActivityIndicator, TouchableOpacity, Alert, View, Text } from 'react-native';
+import { ThemedView } from 'components/ThemedView';
+import { ThemedText } from 'components/ThemedText';
+import { Input } from 'components/Input';
+import { router } from 'expo-router';
+import { Button } from 'components/Button';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '../../store';
-import { loginUser } from '../../store/slices/authSlice'; // Import the login thunk
+import { signIn, clearError } from '../../store/slices/authSlice'; // Only import signIn and clearError
+import { AppDispatch, RootState } from '../../store'; // Import RootState and AppDispatch for typing
+import '../../global.css'; // Ensure global styles are applied
 
-import { ThemedView } from '../../components/ThemedView';
-import { ThemedText } from '../../components/ThemedText';
-import { Input } from '../../components/Input';
-import { Button } from '../../components/Button'; // Assuming you have a Button component
-
-export default function LoginScreen() {
+export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
   const dispatch: AppDispatch = useDispatch();
-  const router = useRouter();
-
-  const authStatus = useSelector((state: RootState) => state.auth.status);
+  const authLoading = useSelector((state: RootState) => state.auth.loading);
   const authError = useSelector((state: RootState) => state.auth.error);
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
 
-  const handleLogin = useCallback(async () => {
-    if (!email || !password) {
-      Alert.alert('Input Required', 'Please enter both email and password.');
-      return;
+  // Effect to handle navigation after successful login
+  useEffect(() => {
+    if (isAuthenticated && !authLoading && !authError) {
+      router.replace('/(tabs)'); // Redirect to main screen after successful auth
     }
+  }, [isAuthenticated, authLoading, authError, router]);
 
-    const result = await dispatch(loginUser({ email, password }));
-
-    if (loginUser.rejected.match(result)) {
-      Alert.alert('Login Failed', authError || 'An unknown error occurred.');
+  // Effect to display errors from Redux
+  useEffect(() => {
+    if (authError) {
+      Alert.alert('Authentication Error', authError);
     }
-    // No need to navigate here, the _layout.tsx hook handles redirection on successful login
-  }, [email, password, dispatch, authError]);
+  }, [authError, dispatch]);
+
+  const handleLoginPress = async () => {
+    dispatch(clearError()); // Clear any previous error
+
+    const resultAction = await dispatch(signIn({ email, password }));
+
+    if (signIn.rejected.match(resultAction)) {
+      // Error handling is managed by authSlice and displayed by useEffect above
+      console.error('Login rejected:', resultAction.payload);
+    } else if (signIn.fulfilled.match(resultAction)) {
+      console.log('Login successful!');
+
+      router.replace('(tabs)'); // Redirect to main screen after successful auth
+      // Navigation is handled by the useEffect watching isAuthenticated
+    }
+  };
 
   return (
-    <ThemedView className="flex-1 items-center justify-center bg-background p-6">
-      <ThemedText className="text-3xl font-bold text-foreground mb-8">Login</ThemedText>
-
-      <ThemedView className="w-full max-w-sm">
+    <ThemedView className="flex-1 items-center justify-center bg-background px-8 dark:bg-foreground">
+      <ThemedText className="mb-4 font-poppinsBold text-foreground dark:text-background">
+        Login
+      </ThemedText>
+      <View className="h-8" />
+      <ThemedView className="w-full max-w-sm items-center justify-center py-8">
         <Input
           placeholder="Email"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
-          className="mb-4 text-foreground"
+          className="mb-4 mb-6 w-full items-center justify-center text-foreground"
           placeholderTextColor="hsl(var(--muted-foreground))"
         />
+        <View className="h-8" />
         <Input
           placeholder="Password"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
-          className="mb-6 text-foreground"
+          className="mb-6 w-full items-center justify-center text-foreground"
           placeholderTextColor="hsl(var(--muted-foreground))"
         />
+        <View className="h-8" />
         <Button
-          label="Login"
-          onPress={handleLogin}
-          disabled={authStatus === 'loading'}
-          className="w-full mb-4"
-        >
-          {authStatus === 'loading' && (
-            <ActivityIndicator color="hsl(var(--primary-foreground))" />
-          )}
+          label={authLoading ? <ActivityIndicator color="#fff" /> : 'Login'}
+          onPress={handleLoginPress}
+          disabled={authLoading} // Disable button when loading
+          className="mb-4 w-full">
+          {authLoading && <ActivityIndicator color="hsl(var(--primary-foreground))" />}
         </Button>
-        <TouchableOpacity onPress={() => router.replace('/auth/signup')}>
-          <ThemedText className="text-center text-primary text-base">
+        <View className="h-8" />
+        <TouchableOpacity onPress={() => router.replace('/(auth)/signup')}>
+          <Text className="text-center font-poppinsBold text-primary">
             Don't have an account? Sign Up
-          </ThemedText>
+          </Text>
         </TouchableOpacity>
       </ThemedView>
     </ThemedView>

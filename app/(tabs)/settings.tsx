@@ -1,13 +1,15 @@
 // app/(tabs)/settings.tsx
 import { ThemedText } from './../../components/ThemedText';
 import { ThemedView } from './../../components/ThemedView';
-import { Button } from './../../components/Button';
 import React, { useCallback, useState } from 'react'; // Import useState
-import { ScrollView, Switch, Alert, Linking } from 'react-native'; // Import Linking for external links
+import { ScrollView, Switch, Alert, Linking, TouchableOpacity } from 'react-native'; // Import Linking for external links
 import { useRouter } from 'expo-router';
+import { clearAuth, clearError } from 'store/slices/authSlice';
 
 import { useColorScheme } from './../../hooks/useColorScheme.web'; // Votre hook personnalisé pour le thème
-
+import { useDispatch } from 'react-redux';
+import { AppDispatch, RootState } from '../../store';
+// Import clearError action
 export default function SettingsScreen() {
   const router = useRouter();
   const { colorScheme, setColorScheme } = useColorScheme();
@@ -16,10 +18,28 @@ export default function SettingsScreen() {
   const [enablePushNotifications, setEnablePushNotifications] = useState(true);
   const [receiveEmailSummaries, setReceiveEmailSummaries] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState('Français'); // État pour la langue
-
+  const dispatch: AppDispatch = useDispatch();
   const toggleTheme = useCallback(() => {
     setColorScheme(colorScheme === 'dark' ? 'light' : 'dark');
   }, [colorScheme, setColorScheme]);
+
+  const handleLogoutPress = useCallback(() => {
+    Alert.alert('Déconnexion', 'Êtes-vous sûr de vouloir vous déconnecter ?', [
+      {
+        text: 'Annuler',
+        style: 'cancel',
+      },
+      {
+        text: 'Oui',
+        onPress: async () => {
+          // Dispatch the signOutUser thunk to log out from Firebase
+          await dispatch(clearAuth());
+          // The onAuthStateChanged listener in _layout.tsx (or similar)
+          // will then handle clearing Redux state and navigation.
+        },
+      },
+    ]);
+  }, [dispatch]); // Depend on dispatch
 
   const handleAboutPress = useCallback(() => {
     Alert.alert(
@@ -51,7 +71,7 @@ export default function SettingsScreen() {
   }, []);
 
   const handleManageProfilePress = useCallback(() => {
-     router.push('/(modals)/edit-profile'); 
+    router.push('/(modals)/edit-profile');
   }, [router]);
 
   return (
@@ -111,24 +131,30 @@ export default function SettingsScreen() {
           Compte
         </ThemedText>
         <ThemedView className="mb-6 rounded-lg bg-card p-4 shadow-sm">
-          <Button
-            label="Gérer les détails du profil"
-            variant="ghost"
+          <TouchableOpacity
             onPress={handleManageProfilePress}
-            className="mb-1 w-full justify-start font-poppinsRegular"
-          />
-          <Button
-            label="Changer le mot de passe"
-            variant="ghost"
+            className="mb-1 w-full justify-start h-8 font-poppinsRegular"
+          >
+          <ThemedText className='font-poppinsRegular text-xl text-foreground'>Gerer le profil</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={handleChangePasswordPress}
-            className="mb-1 w-full justify-start font-poppinsRegular"
-          />
-          <Button
-            label="Changer l'adresse e-mail"
-            variant="ghost"
+            className="mb-1 w-full justify-start h-8 font-poppinsRegular text-xl text-foreground"
+          >
+            <ThemedText className='font-poppinsRegular text-xl text-foreground'>Changer le mot de passe</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleLogoutPress}
+            className="mb-1 w-full justify-start h-8 font-poppinsRegular text-xl text-foreground"
+          >
+            <ThemedText className='font-poppinsRegular text-xl text-foreground'>Se déconnecter</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={handleChangeEmailPress}
-            className="w-full justify-start font-poppinsRegular"
-          />
+            className="w-full justify-start h-8 font-poppinsRegular text-xl text-foreground"
+          >
+            <ThemedText className='font-poppinsRegular text-xl text-foreground'>Changer l'adresse e-mail</ThemedText>
+          </TouchableOpacity>
         </ThemedView>
 
         {/* Section Général */}
@@ -136,31 +162,31 @@ export default function SettingsScreen() {
           Général
         </ThemedText>
         <ThemedView className="mb-6 rounded-lg bg-card p-4 shadow-sm">
-          <ThemedView className="mb-3 flex-row items-center justify-between">
-            <ThemedText className="font-poppinsRegular text-lg text-foreground">
+          <ThemedView className="mb-3 flex-row items-center h-8 justify-between">
+            <ThemedText className="font-poppinsRegular text-lg h-8 text-foreground">
               Langue de l'application
             </ThemedText>
             <ThemedText className="text-lg text-muted-foreground">{selectedLanguage}</ThemedText>
             {/* Vous pouvez ajouter un Picker ou un bouton ici pour ouvrir un sélecteur de langue */}
           </ThemedView>
-          <Button
-            label="À Propos de l'application"
-            variant="ghost"
+          <TouchableOpacity
             onPress={handleAboutPress}
-            className="mb-1 w-full justify-start font-poppinsRegular"
-          />
-          <Button
-            label="Politique de Confidentialité"
-            variant="ghost"
+            className="mb-1 w-full justify-start h-8 font-poppinsRegular"
+          >
+            <ThemedText className='font-poppinsRegular'>À Propos de l'application</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={handlePrivacyPolicyPress}
-            className="mb-1 w-full justify-start font-poppinsRegular"
-          />
-          <Button
-            label="Conditions d'Utilisation"
-            variant="ghost"
+            className="mb-1 w-full justify-start h-8 font-poppinsRegular"
+          >
+            <ThemedText className='font-poppinsRegular'>Politique de Confidentialité</ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={handleTermsOfServicePress}
-            className="w-full justify-start font-poppinsRegular"
-          />
+            className="mb-1 w-full justify-start h-8 font-poppinsRegular"
+          >
+            <ThemedText className='font-poppinsRegular'>Conditions d'Utilisation</ThemedText>
+          </TouchableOpacity>
         </ThemedView>
       </ScrollView>
     </ThemedView>

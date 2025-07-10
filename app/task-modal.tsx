@@ -4,7 +4,7 @@ import { Alert, Platform, ScrollView, TouchableOpacity, View } from 'react-nativ
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store';
-import { addTask, addTaskAsync, Task, updateTask } from '../store/slices/taskSlice';
+import { createTask, Task, updateTask } from '../store/slices/taskSlice';
 
 // NEW: Import DateTimePicker
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -22,7 +22,7 @@ import { Dialog, DialogContent } from '../components/Dialog';
 // Icons
 import { X, ChevronDown, CalendarDays } from 'lucide-react-native'; // Add CalendarDays icon
 
-type Priority = 'Low' | 'Medium' | 'High';
+type Priority = 'low' | 'medium' | 'high'; // Define priority type
 
 export default function TaskModalScreen() {
   const router = useRouter();
@@ -30,16 +30,44 @@ export default function TaskModalScreen() {
   const params = useLocalSearchParams();
   const taskId = params.taskId as string | undefined;
 
+  const handleUpdateTask = async () => {
+    if (!taskId || !selectedProjectId) {
+      Alert.alert('Erreur', 'Projet ou tâche introuvable.');
+      return;
+    }
+
+    try {
+      await dispatch(
+        updateTask({
+          projectId: selectedProjectId,
+          taskId,
+          updates: {
+            title,
+            description,
+            priority,
+            dueDate: dueDate instanceof Date ? new Date(dueDate) : dueDate,
+            updatedAt: new Date(), // Use new Date() for updatedAt
+          },
+        })
+      ).unwrap();
+
+      Alert.alert('Succès', 'Tâche mise à jour !');
+      router.back();
+    } catch (error) {
+      Alert.alert('Erreur', error as string);
+    }
+  };
+
   const allProjects = useSelector((state: RootState) => state.projects.projects);
 
   const existingTask = useSelector((state: RootState) =>
-    taskId ? state.tasks.tasks.find((t) => t.id === taskId) : undefined
+    taskId ? state.tasks.items.find((t) => t.id === taskId) : undefined
   );
-  const userId = useSelector((state: RootState) => state.auth.user?.uid);
+  const userId = useSelector((state: RootState) => state.auth.uid);
   const [title, setTitle] = useState(existingTask?.title || '');
   const [description, setDescription] = useState(existingTask?.description || '');
-  const [dueDate, setDueDate] = useState(existingTask?.dueDate || '');
-  const [priority, setPriority] = useState<Priority>(existingTask?.priority || 'Medium');
+  const [dueDate, setDueDate] = useState(existingTask?.dueDate);
+  const [priority, setPriority] = useState(existingTask?.priority || ('low' as Priority));
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(
     existingTask?.projectId
   );
@@ -48,22 +76,22 @@ export default function TaskModalScreen() {
   // NEW: State for Date Picker
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(
-    existingTask?.dueDate ? new Date(existingTask.dueDate) : new Date()
+    existingTask?.dueDate ? new Date(existingTask.dueDate) : new Date() // Initialize with existing task's due date or current date
   );
 
   useEffect(() => {
     if (existingTask) {
       setTitle(existingTask.title);
       setDescription(existingTask.description || '');
-      setDueDate(existingTask.dueDate || '');
+      setDueDate(existingTask.dueDate);
       setPriority(existingTask.priority);
       setSelectedProjectId(existingTask.projectId);
       setSelectedDate(existingTask.dueDate ? new Date(existingTask.dueDate) : new Date()); // Set for date picker
     } else {
       setTitle('');
       setDescription('');
-      setDueDate('');
-      setPriority('Medium');
+      setDueDate(undefined);
+      setPriority('medium');
       setSelectedProjectId(undefined);
       setSelectedDate(new Date()); // Reset for new task
     }
@@ -80,22 +108,36 @@ export default function TaskModalScreen() {
       title: title.trim(),
       description: description.trim() || undefined,
       completed: existingTask ? existingTask.completed : false,
-      priority: priority,
-      dueDate: dueDate.trim() || undefined,
-      projectId: selectedProjectId,
-      createdAt: existingTask ? existingTask.createdAt : new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      userId: userId ? userId : '',
+      priority: priority || 'medium', // Default to 'medium' if not set
+      dueDate: dueDate ? new Date(dueDate) : undefined, // Convert to Date
+      projectId: selectedProjectId || '',
+      createdAt: existingTask?.createdAt || new Date(),
+      updatedAt: new Date(),
+      assignedTo: existingTask ? existingTask.assignedTo : [], // Keep existing assigned users
+      attachments: existingTask ? existingTask.attachments : [], // Keep existing attachments
+      createdBy: userId || '', // Use current user ID
+      status: existingTask ? existingTask.status : 'to-do', // Default to 'to
     };
 
     if (existingTask) {
-      dispatch(updateTask(taskData));
+      dispatch(
+        updateTask({
+          projectId: selectedProjectId || '',
+          taskId: existingTask.id,
+          updates: taskData,
+        })
+      );
       Alert.alert('Success', 'Task updated successfully!');
     } else {
       dispatch(
-        addTaskAsync({
-          task: taskData,
-          userId: userId ? userId : '',
+        createTask({
+          projectId: selectedProjectId || '',
+          title: taskData.title,
+          description: taskData.description || '',
+          dueDate: taskData.dueDate ? taskData.dueDate.toISOString() : undefined, // Convert Date to ISO string for storage
+          priority: taskData.priority,
+          createdBy: taskData.createdBy || '',
+          assignedTo: taskData.assignedTo || [],
         })
       );
       Alert.alert('Success', 'Task added successfully!');
@@ -117,7 +159,7 @@ export default function TaskModalScreen() {
     setShowDatePicker(Platform.OS === 'ios'); // Keep picker open on iOS until "Done"
     if (date) {
       setSelectedDate(date);
-      setDueDate(format(date, 'yyyy-MM-dd')); // Format date for storage
+      setDueDate(date); // Format date for storage
     }
   }, []);
 
@@ -166,7 +208,9 @@ export default function TaskModalScreen() {
           <TouchableOpacity
             onPress={showDatepicker}
             className="flex-row items-center justify-between rounded-md border border-border bg-input p-3">
-            <ThemedText className="text-foreground">{dueDate || 'Select a date'}</ThemedText>
+            <ThemedText className="text-foreground">
+              {dueDate ? dueDate.toISOString().split('T')[0] : 'Select a date'}
+            </ThemedText>
             <CalendarDays size={20} className="text-muted-foreground" />
           </TouchableOpacity>
 
@@ -186,22 +230,24 @@ export default function TaskModalScreen() {
           <ThemedText className="mb-1 text-sm font-medium text-foreground">Priority</ThemedText>
           <RadioGroup
             value={priority}
-            onValueChange={(value) => setPriority(value as Priority)}
+            onValueChange={(val: string) => {
+              setPriority(val as Priority);
+            }}
             className="mt-2 flex-row justify-around">
             <ThemedView className="flex-row items-center space-x-2">
-              <RadioGroupItem value="Low" id="p_low" />
+              <RadioGroupItem value="low" id="p_low" />
               <Label nativeID="p_low" className="text-foreground">
                 Low
               </Label>
             </ThemedView>
             <ThemedView className="flex-row items-center space-x-2">
-              <RadioGroupItem value="Medium" id="p_medium" />
+              <RadioGroupItem value="medium" id="p_medium" />
               <Label nativeID="p_medium" className="text-foreground">
                 Medium
               </Label>
             </ThemedView>
             <ThemedView className="flex-row items-center space-x-2">
-              <RadioGroupItem value="High" id="p_high" />
+              <RadioGroupItem value="high" id="p_high" />
               <Label nativeID="p_high" className="text-foreground">
                 High
               </Label>
