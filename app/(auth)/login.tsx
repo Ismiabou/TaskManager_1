@@ -45,6 +45,10 @@ export default function Login() {
     }
   }, [authError, dispatch]);
 
+  const navigateToForgotPassword = () => {
+    router.push('(auth)/forgot-password');
+  };
+
   const handleLoginPress = async () => {
     dispatch(clearError()); // Clear any previous error
 
@@ -57,8 +61,6 @@ export default function Login() {
     } else if (signIn.fulfilled.match(resultAction)) {
       router.replace('/(tabs)');
       console.log('Login successful!');
-
-      // **REMOVE THIS LINE**: router.replace("(tabs)"); // Let _layout.tsx handle navigation
     }
   };
 
@@ -113,6 +115,11 @@ export default function Login() {
                 Sign Up
               </ThemedText>
             </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={navigateToForgotPassword} className="mt-4">
+            <ThemedText className="text-center font-poppinsRegular text-blue-500">
+              Forgot Password? Reset it
+            </ThemedText>
           </TouchableOpacity>
         </ThemedView>
       </ThemedView>

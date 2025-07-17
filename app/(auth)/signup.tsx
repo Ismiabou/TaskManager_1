@@ -3,13 +3,9 @@ import React, { useState, useCallback, useEffect } from 'react'; // Import useEf
 import { ScrollView, Alert, ActivityIndicator, TouchableOpacity, View, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-
-import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { ThemedText } from '../../components/ThemedText';
 import { ThemedView } from '../../components/ThemedView';
-import { Check } from 'lucide-react-native';
-import { Checkbox } from '../../components/Checkbox';
 
 import '../../global.css'; // Assurez-vous que vos styles globaux sont importés
 
@@ -94,10 +90,11 @@ const Signup = () => {
           <ThemedView className="w-full items-center justify-center bg-background dark:bg-foreground">
             <ThemedText
               type="subtitle"
-              className="mb-6 font-poppinsBold text-foreground dark:text-background">
-              Create your first task
+              className="mb-6 justify-center text-center font-poppinsBold text-foreground dark:text-background">
+              Create your first task and manage your projects efficiently !
             </ThemedText>
             <ThemedView className="w-full max-w-sm items-center justify-center py-8">
+              <View className="h-8" />
               <Input
                 placeholder="Email"
                 value={email}
@@ -116,7 +113,7 @@ const Signup = () => {
                 className="mb-6 w-full items-center justify-center text-foreground"
                 placeholderTextColor="hsl(var(--muted-foreground))"
               />
-                            <View className="h-8" />
+              <View className="h-8" />
               <Input
                 placeholder="Confirm Password"
                 value={confirmPassword}
@@ -128,7 +125,7 @@ const Signup = () => {
               <View className="h-8" />
               <TouchableOpacity
                 onPress={handleSignUpPress}
-                disabled={authLoading} // Disable button when loading
+                disabled={authLoading}
                 className="mb-4 w-[80%] justify-center rounded-lg bg-primary p-4 shadow-lg">
                 <Text className="w-[60%]  text-center font-poppinsBold text-background dark:text-foreground">
                   {authLoading && <ActivityIndicator color="hsl(var(--primary-foreground))" /> ? (
@@ -139,7 +136,7 @@ const Signup = () => {
                 </Text>
               </TouchableOpacity>
               <View className="h-8" />
-              <TouchableOpacity onPress={() => router.replace('(auth)/signup')}>
+              <TouchableOpacity onPress={() => router.replace('(auth)/login')}>
                 <Text>
                   Don't have an account? {''}
                   <ThemedText className="text-center font-poppinsBold text-blue-500">
@@ -147,7 +144,7 @@ const Signup = () => {
                   </ThemedText>
                 </Text>
               </TouchableOpacity>
-            </ThemedView>{' '}
+            </ThemedView>
           </ThemedView>
         </ThemedView>
       </ScrollView>
