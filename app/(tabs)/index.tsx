@@ -1,9 +1,9 @@
 // app/(tabs)/index.tsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { ActivityIndicator, Alert, FlatList, Keyboard, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker'; // Import Picker
 import { Loader2, PlusCircle } from 'lucide-react-native';
-import { Button } from '../../components/Button';
 import { Dialog, DialogContent } from '../../components/Dialog';
 import { Input } from '../../components/Input';
 import { ThemedText } from './../../components/ThemedText';
@@ -27,8 +27,9 @@ export default function TasksScreen() {
   const [newTaskDescription, setNewTaskDescription] = useState(''); // Added for new task description
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [selectedProjectIdInModal, setSelectedProjectIdInModal] = useState<string | undefined>(undefined); // New state for project selection in modal
-
+  const [selectedProjectIdInModal, setSelectedProjectIdInModal] = useState<string | undefined>(
+    undefined
+  ); // New state for project selection in modal
 
   const dispatch: AppDispatch = useDispatch();
 
@@ -49,11 +50,11 @@ export default function TasksScreen() {
   const router = useRouter();
 
   // Listen to tasks for the selected project
-  useEffect(() => { 
+  useEffect(() => {
     let unsubscribe: (() => void) | undefined;
     if (projectId) {
       // Dispatch the listenToTasks thunk and store the unsubscribe function
-      dispatch(listenToTasks(userId || "")).then((action) => {
+      dispatch(listenToTasks(projectId)).then((action) => {
         if (listenToTasks.fulfilled.match(action)) {
           unsubscribe = action.payload; // Store the unsubscribe function
         }
@@ -71,7 +72,7 @@ export default function TasksScreen() {
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
     // Dispatch the listenToProjects thunk and store the unsubscribe function
-    dispatch(listenToProjects("")).then((action) => {
+    dispatch(listenToProjects(userId || '')).then((action) => {
       if (listenToProjects.fulfilled.match(action)) {
         unsubscribe = action.payload; // Store the unsubscribe function
       }
@@ -86,13 +87,14 @@ export default function TasksScreen() {
 
   // Set default selected project in modal when projects load or projectId changes
   useEffect(() => {
-    if (projectId && !editingTask) { // Only set default when adding new task
+    if (projectId && !editingTask) {
+      // Only set default when adding new task
       setSelectedProjectIdInModal(projectId);
-    } else if (editingTask && editingTask.projectId) { // When editing, set to task's project
+    } else if (editingTask && editingTask.projectId) {
+      // When editing, set to task's project
       setSelectedProjectIdInModal(editingTask.projectId);
     }
   }, [projectId, editingTask, projects]); // Depend on projects to ensure they are loaded
-
 
   // Display error if any
   useEffect(() => {
@@ -106,19 +108,22 @@ export default function TasksScreen() {
     }
   }, [tasksError, projectsError]);
 
-  const handleOpenModal = useCallback((task: Task | null = null) => {
-    setEditingTask(task);
-    if (task) {
-      setNewTaskTitle(task.title);
-      setNewTaskDescription(task.description || ''); // Populate description for editing
-      setSelectedProjectIdInModal(task.projectId); // Set selected project when editing
-    } else {
-      setNewTaskTitle('');
-      setNewTaskDescription('');
-      setSelectedProjectIdInModal(projectId); // Default to current project when adding
-    }
-    setIsModalOpen(true);
-  }, [projectId]);
+  const handleOpenModal = useCallback(
+    (task: Task | null = null) => {
+      setEditingTask(task);
+      if (task) {
+        setNewTaskTitle(task.title);
+        setNewTaskDescription(task.description || ''); // Populate description for editing
+        setSelectedProjectIdInModal(task.projectId); // Set selected project when editing
+      } else {
+        setNewTaskTitle('');
+        setNewTaskDescription('');
+        setSelectedProjectIdInModal(projectId); // Default to current project when adding
+      }
+      setIsModalOpen(true);
+    },
+    [projectId]
+  );
 
   const handleCancelEdit = useCallback(() => {
     setIsModalOpen(false);
@@ -130,7 +135,8 @@ export default function TasksScreen() {
   }, []);
 
   const handleAddTask = useCallback(async () => {
-    if (!selectedProjectIdInModal) { // Use selectedProjectIdInModal
+    if (!selectedProjectIdInModal) {
+      // Use selectedProjectIdInModal
       Alert.alert('Error', 'Please select a project for the new task.');
       return;
     }
@@ -161,10 +167,18 @@ export default function TasksScreen() {
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to add task.');
     }
-  }, [selectedProjectIdInModal, newTaskTitle, newTaskDescription, currentUserId, dispatch, handleCancelEdit]);
+  }, [
+    selectedProjectIdInModal,
+    newTaskTitle,
+    newTaskDescription,
+    currentUserId,
+    dispatch,
+    handleCancelEdit,
+  ]);
 
   const handleSaveEditedTask = useCallback(async () => {
-    if (!editingTask || !selectedProjectIdInModal) { // Use selectedProjectIdInModal
+    if (!editingTask || !selectedProjectIdInModal) {
+      // Use selectedProjectIdInModal
       Alert.alert('Error', 'No task selected for editing or no project selected.');
       return;
     }
@@ -195,7 +209,14 @@ export default function TasksScreen() {
     } catch (error: any) {
       Alert.alert('Error', error.message || 'Failed to update task.');
     }
-  }, [editingTask, selectedProjectIdInModal, newTaskTitle, newTaskDescription, dispatch, handleCancelEdit]);
+  }, [
+    editingTask,
+    selectedProjectIdInModal,
+    newTaskTitle,
+    newTaskDescription,
+    dispatch,
+    handleCancelEdit,
+  ]);
 
   const handleToggleComplete = useCallback(
     async (taskToToggle: Task) => {
@@ -277,116 +298,122 @@ export default function TasksScreen() {
   );
 
   return (
-    <ThemedView className="flex-1 items-center bg-background dark:bg-foreground">
-      <ThemedView className="flex-row items-center justify-between border-b border-gray-200 bg-background p-4 dark:border-gray-700 dark:bg-foreground">
-        <ThemedText type="title" className="font-poppinsBold text-foreground">
-          My Tasks
-        </ThemedText>
-        <TouchableOpacity
-          className={cn('h-9 w-9 rounded-full p-2')}
-          onPress={() => handleOpenModal()}>
-          <PlusCircle size={20} className="text-primary-foreground" />
-        </TouchableOpacity>
-      </ThemedView>
-
-      {tasksLoading && currentTasks.length === 0 ? ( // Show loading indicator only if no tasks loaded yet
-        <ThemedView className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" />
-          <ThemedText className="mt-4 text-muted-foreground">Loading tasks...</ThemedText>
+    <SafeAreaView className="flex-1 bg-background dark:bg-foreground">
+      <ThemedView className="items-center bg-background dark:bg-foreground">
+        <ThemedView className="flex-row items-center justify-between border-b border-gray-200 bg-background p-4 dark:border-gray-700 dark:bg-foreground">
+          <ThemedText type="title" className="font-poppinsBold text-foreground">
+            My Tasks
+          </ThemedText>
+          <TouchableOpacity
+            className={cn('h-9 w-9 rounded-full p-2')}
+            onPress={() => handleOpenModal()}>
+            <PlusCircle size={20} className="text-primary-foreground" />
+          </TouchableOpacity>
         </ThemedView>
-      ) : (
-        <FlatList
-          data={currentTasks}
-          renderItem={renderTaskItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 20 }}
-          ListEmptyComponent={
-            <ThemedView className="mt-20 flex-1 items-center justify-center">
-              <ThemedText className="text-lg text-muted-foreground">
-                No active tasks found. Add a new task!
-              </ThemedText>
-            </ThemedView>
-          }
-        />
-      )}
 
-      {/* Add Task / Edit Task Dialog */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <ThemedView className="border-b border-gray-200 p-4 dark:border-gray-700">
-            <ThemedText className="font-poppinsSemiBold text-lg text-foreground">
-              {editingTask ? 'Edit Task' : 'Add New Task'}
-            </ThemedText>
-            <ThemedText className="text-sm text-muted-foreground">
-              {editingTask ? 'Make changes to your task here.' : 'Enter details for your new task.'}
-            </ThemedText>
+        {tasksLoading && currentTasks.length === 0 ? ( // Show loading indicator only if no tasks loaded yet
+          <ThemedView className="flex-1 items-center justify-center">
+            <ActivityIndicator size="large" />
+            <ThemedText className="mt-4 text-muted-foreground">Loading tasks...</ThemedText>
           </ThemedView>
+        ) : (
+          <FlatList
+            data={currentTasks}
+            renderItem={renderTaskItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={{ paddingBottom: 20 }}
+            ListEmptyComponent={
+              <ThemedView className="mt-20 flex-1 items-center justify-center">
+                <ThemedText className="text-lg text-muted-foreground">
+                  No active tasks found. Add a new task!
+                </ThemedText>
+              </ThemedView>
+            }
+          />
+        )}
 
-          <ThemedView className="gap-4 p-4">
-            <ThemedView className="mb-4">
-              <ThemedText className="text-right text-sm font-medium text-foreground">
-                Title
+        {/* Add Task / Edit Task Dialog */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <ThemedView className="border-b border-gray-200 p-4 dark:border-gray-700">
+              <ThemedText className="font-poppinsSemiBold text-lg text-foreground">
+                {editingTask ? 'Edit Task' : 'Add New Task'}
               </ThemedText>
-              <Input
-                id="taskTitle"
-                className="mt-2 h-12"
-                placeholder="Task title"
-                value={newTaskTitle}
-                onChangeText={setNewTaskTitle}
-              />
+              <ThemedText className="text-sm text-muted-foreground">
+                {editingTask
+                  ? 'Make changes to your task here.'
+                  : 'Enter details for your new task.'}
+              </ThemedText>
             </ThemedView>
 
-            <ThemedView className="mb-4">
-              <ThemedText className="text-right text-sm font-medium text-foreground">
-                Description (Optional)
-              </ThemedText>
-              <Input
-                id="taskDescription"
-                className="mt-2 h-20"
-                placeholder="Details about the task"
-                value={newTaskDescription}
-                onChangeText={setNewTaskDescription}
-                multiline
-                numberOfLines={3}
-              />
+            <ThemedView className="gap-4 p-4">
+              <ThemedView className="mb-4">
+                <ThemedText className="text-right text-sm font-medium text-foreground">
+                  Title
+                </ThemedText>
+                <Input
+                  id="taskTitle"
+                  className="mt-2 h-12"
+                  placeholder="Task title"
+                  value={newTaskTitle}
+                  onChangeText={setNewTaskTitle}
+                />
+              </ThemedView>
+
+              <ThemedView className="mb-4">
+                <ThemedText className="text-right text-sm font-medium text-foreground">
+                  Description (Optional)
+                </ThemedText>
+                <Input
+                  id="taskDescription"
+                  className="mt-2 h-20"
+                  placeholder="Details about the task"
+                  value={newTaskDescription}
+                  onChangeText={setNewTaskDescription}
+                  multiline
+                  numberOfLines={3}
+                />
+              </ThemedView>
+
+              <ThemedView className="mb-4">
+                <ThemedText className="text-right text-sm font-medium text-foreground">
+                  Project
+                </ThemedText>
+                {projectsLoading ? (
+                  <ActivityIndicator size="small" />
+                ) : (
+                  <Picker
+                    selectedValue={selectedProjectIdInModal}
+                    onValueChange={(itemValue: string | undefined) =>
+                      setSelectedProjectIdInModal(itemValue)
+                    }
+                    // You might need to adjust styling for the Picker to match your theme
+                    style={{ height: 50, width: '100%', color: 'white' }}
+                    itemStyle={{ color: 'black' }} // This might not work on all platforms for text color
+                  >
+                    {projects.length === 0 && (
+                      <Picker.Item label="No projects available" value={null} enabled={false} />
+                    )}
+                    {projects.map((project) => (
+                      <Picker.Item key={project.id} label={project.name} value={project.id} />
+                    ))}
+                  </Picker>
+                )}
+              </ThemedView>
             </ThemedView>
 
-            <ThemedView className="mb-4">
-              <ThemedText className="text-right text-sm font-medium text-foreground">
-                Project
-              </ThemedText>
-              {projectsLoading ? (
-                <ActivityIndicator size="small" />
-              ) : (
-                <Picker
-                  selectedValue={selectedProjectIdInModal}
-                  onValueChange={(itemValue:string | undefined) => setSelectedProjectIdInModal(itemValue)}
-                  // You might need to adjust styling for the Picker to match your theme
-                  style={{ height: 50, width: '100%', color: 'white' }}
-                  itemStyle={{ color: 'black' }} // This might not work on all platforms for text color
-                >
-                  {projects.length === 0 && (
-                    <Picker.Item label="No projects available" value={null} enabled={false} />
-                  )}
-                  {projects.map((project) => (
-                    <Picker.Item key={project.id} label={project.name} value={project.id} />
-                  ))}
-                </Picker>
-              )}
+            {/* DialogFooter */}
+            <ThemedView className="flex flex-col-reverse border-t border-gray-200 p-4 sm:flex-row sm:justify-end sm:space-x-2 dark:border-gray-700">
+              <TouchableOpacity onPress={handleCancelEdit}>
+                <ThemedText className="text-destructive">Cancel</ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={editingTask ? handleSaveEditedTask : handleAddTask}>
+                <ThemedText>{editingTask ? 'Save Changes' : 'Add Task'}</ThemedText>
+              </TouchableOpacity>
             </ThemedView>
-          </ThemedView>
-
-          {/* DialogFooter */}
-          <ThemedView className="flex flex-col-reverse border-t border-gray-200 p-4 sm:flex-row sm:justify-end sm:space-x-2 dark:border-gray-700">
-            <TouchableOpacity onPress={handleCancelEdit}>
-              <ThemedText className="text-destructive">Cancel</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={editingTask ? handleSaveEditedTask : handleAddTask}>
-              <ThemedText>{editingTask ? 'Save Changes' : 'Add Task'}</ThemedText>
-            </TouchableOpacity>
-          </ThemedView>
-        </DialogContent>
-      </Dialog>
-    </ThemedView>
+          </DialogContent>
+        </Dialog>
+      </ThemedView>
+    </SafeAreaView>
   );
 }

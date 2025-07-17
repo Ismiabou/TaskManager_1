@@ -23,6 +23,7 @@ import { Label } from '../../components/Label';
 
 // Icons
 import { FolderPlus, Pencil, Trash2 } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Component for a single project item (could be in components/ProjectItem.tsx)
 const ProjectItem = React.memo(
@@ -203,6 +204,7 @@ export default function ProjectsScreen() {
   );
 
   return (
+    <SafeAreaView className="flex-1 bg-background dark:bg-foreground">
     <ThemedView className="flex-1 bg-background dark:bg-foreground">
       <ThemedView className="flex-row items-center justify-between border-b border-gray-200 bg-background p-4 dark:border-gray-700 dark:bg-foreground">
         <ThemedText type="title" className="font-poppinsBold text-foreground">
@@ -282,5 +284,6 @@ export default function ProjectsScreen() {
         </DialogContent>
       </Dialog>
     </ThemedView>
+    </SafeAreaView>
   );
 }

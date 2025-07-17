@@ -17,10 +17,10 @@
       "expo-router"
     ],
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/splashScreen.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/images/splashScreen_move.gif",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -32,7 +32,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/images/splashScreen.png",
         "backgroundColor": "#ffffff"
       }
     }

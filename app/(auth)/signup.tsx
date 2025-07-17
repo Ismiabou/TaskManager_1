@@ -1,6 +1,6 @@
 // app/index.tsx - Écran d'inscription (Sign Up)
 import React, { useState, useCallback, useEffect } from 'react'; // Import useEffect
-import { ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { ScrollView, Alert, ActivityIndicator, TouchableOpacity, View, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
@@ -97,56 +97,57 @@ const Signup = () => {
               className="mb-6 font-poppinsBold text-foreground dark:text-background">
               Create your first task
             </ThemedText>
-            <ThemedView className="m-4 flex w-full flex-col items-center justify-center rounded-lg py-8 shadow-lg dark:bg-gray-800">
+            <ThemedView className="w-full max-w-sm items-center justify-center py-8">
               <Input
                 placeholder="Email"
-                className="mb-4 h-12 w-full items-center"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                className="mb-4 mb-6 w-full items-center justify-center text-foreground"
+                placeholderTextColor="hsl(var(--muted-foreground))"
               />
+              <View className="h-8" />
               <Input
                 placeholder="Password"
-                className="mb-4 h-12 w-full items-center"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
+                className="mb-6 w-full items-center justify-center text-foreground"
+                placeholderTextColor="hsl(var(--muted-foreground))"
               />
+                            <View className="h-8" />
               <Input
                 placeholder="Confirm Password"
-                className="mb-6 h-12 w-full items-center"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry
+                className="mb-6 w-full items-center justify-center text-foreground"
+                placeholderTextColor="hsl(var(--muted-foreground))"
               />
-              <Checkbox label="Remember me" className="mb-6">
-                <Check size={20} className="items-center text-primary-foreground" />
-              </Checkbox>
-              <Button
-                label={authLoading ? <ActivityIndicator color="#fff" /> : "Sign Up"}
-                size={'default'}
-                variant="secondary"
+              <View className="h-8" />
+              <TouchableOpacity
                 onPress={handleSignUpPress}
-                className="mb-4 w-4/5 items-center justify-center font-poppinsSemiBold"
-                disabled={authLoading} // Use authLoading from Redux
-              />
-              {authError && (
-                <ThemedText className="text-red-500 mb-4 text-center">
-                  {authError}
-                </ThemedText>
-              )}
-              <ThemedText className="mb-2 text-foreground dark:text-foreground">
-                Already have an account?
-              </ThemedText>
-              <Button
-                label="Login"
-                size={'default'}
-                variant="ghost"
-                onPress={navigateToSignIn}
-                className="w-4/5 items-center justify-center font-poppinsSemiBold"
-              />
-            </ThemedView>
+                disabled={authLoading} // Disable button when loading
+                className="mb-4 w-[80%] justify-center rounded-lg bg-primary p-4 shadow-lg">
+                <Text className="w-[60%]  text-center font-poppinsBold text-background dark:text-foreground">
+                  {authLoading && <ActivityIndicator color="hsl(var(--primary-foreground))" /> ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    'Sign Up'
+                  )}
+                </Text>
+              </TouchableOpacity>
+              <View className="h-8" />
+              <TouchableOpacity onPress={() => router.replace('(auth)/signup')}>
+                <Text>
+                  Don't have an account? {''}
+                  <ThemedText className="text-center font-poppinsBold text-blue-500">
+                    Sign Up
+                  </ThemedText>
+                </Text>
+              </TouchableOpacity>
+            </ThemedView>{' '}
           </ThemedView>
         </ThemedView>
       </ScrollView>

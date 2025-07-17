@@ -42,19 +42,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     fontWeight: '600',
+    fontFamily: 'Poppins-SemiBold',
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     lineHeight: 32,
+    fontFamily: 'Poppins-Bold',
   },
   subtitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    fontFamily: 'Poppins-Regular',
   },
   link: {
     lineHeight: 30,
     fontSize: 16,
     color: '#0a7ea4',
+    textDecorationLine: 'underline',
+    fontFamily: 'Poppins-Regular',
   },
 });

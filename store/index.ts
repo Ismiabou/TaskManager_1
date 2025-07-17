@@ -4,6 +4,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
 import projectsReducer from './slices/projectSlice';
 import tasksReducer from './slices/taskSlice'; // Import your tasks slice
+import networkReducer from './slices/networkSlices'; // Import your network slice
 // Add other reducers as you create them
 
 export const store = configureStore({
@@ -11,7 +12,7 @@ export const store = configureStore({
     auth: authReducer,
     projects: projectsReducer,
     tasks: tasksReducer, // Add your tasks slice here
-    // ... other slices
+    network: networkReducer, // Add your network slice here
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
